@@ -28,6 +28,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -89,7 +90,7 @@ public class RouteActivity extends AppCompatActivity implements AMapNaviListener
     SwitchButton switchButton;
     @BindView(R.id.map)
     MapView mMapView;
-    private Dialog bottomDialog;
+    private Dialog bottomDialog,mapDialog;
     private AMap aMap;
     private Unbinder unbinder;
     private AMapLocationClient locationClient = null;
@@ -133,17 +134,21 @@ public class RouteActivity extends AppCompatActivity implements AMapNaviListener
      * 路线计算成功标志位
      */
     private boolean chooseRouteSuccess = false;
-
+    private static final String TAG = "RouteActivity";
 
     private List<MapMessageEntity> messageList = new ArrayList<>();
-private MapMessageAdapter adapter;
+    private MapMessageAdapter adapter;
     private TextView tv_light;
+    private ArrayAdapter<String> mAdapter;
+    private boolean isMapSave = false;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_route);
         unbinder = ButterKnife.bind(this);
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+//        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         mMapView.onCreate(savedInstanceState);
         tvStartPlace.addTextChangedListener(startListener);
         tvEndPlace.addTextChangedListener(endListener);
@@ -152,16 +157,21 @@ private MapMessageAdapter adapter;
 
     }
 
-    @OnClick({R.id.tv_start_place, R.id.lay_my_place, R.id.tv_end_place})
+    @OnClick({R.id.tv_start_place, R.id.lay_my_place, R.id.tv_end_place,R.id.lay_start_place,R.id.lay_end_place})
     public void onViewClicked(View view) {
         switch (view.getId()) {
+            case R.id.lay_start_place:
+                bottomDialog.dismiss();
+                break;
+            case R.id.lay_end_place:
+                bottomDialog.dismiss();
+                break;
             case R.id.tv_start_place:
                 bottomDialog.dismiss();
-
                 break;
+
             case R.id.lay_my_place:
-//                bottomDialog.dismiss();
-//                changeRoute();
+
                 break;
             case R.id.tv_end_place:
                 bottomDialog.dismiss();
@@ -188,9 +198,6 @@ private MapMessageAdapter adapter;
 
     /**
      * 默认的定位参数
-     *
-     * @author hongming.wang
-     * @since 2.8.0
      */
     private AMapLocationClientOption getDefaultOption() {
         AMapLocationClientOption mOption = new AMapLocationClientOption();
@@ -251,13 +258,122 @@ private MapMessageAdapter adapter;
         btn_open_gaodeMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                doStartApplicationWithPackageName("com.autonavi.minimap");
+                mAdapter = new ArrayAdapter<String>(getApplicationContext(),R.layout.map_listview_item);
+                if (isAppInstalled(getApplicationContext(),"com.tencent.map")){
+                    mAdapter.add("腾讯地图");
+                    isMapSave = true;
+                }
+
+                if (isAppInstalled(getApplicationContext(),"com.baidu.BaiduMap")){
+                    mAdapter.add("百度地图");
+                    isMapSave = true;
+
+                }
+
+                if (isAppInstalled(getApplicationContext(),"com.here.app.maps")){
+                    mAdapter.add("HERE地图");
+                    isMapSave = true;
+
+                }
+
+                if (isAppInstalled(getApplicationContext(),"com.sogou.map.android.maps")){
+                    mAdapter.add("搜狗地图");
+                    isMapSave = true;
+
+                }
+
+                if (isAppInstalled(getApplicationContext(),"com.autonavi.minimap")){
+                    mAdapter.add("高德地图");
+                    isMapSave = true;
+
+                }
+
+                if (isMapSave){
+                    mAdapter.add("取消");
+
+                }
+
+                Log.e(TAG, "mAdapter: "+mAdapter.getCount() );
+                if (mAdapter.getCount()==0){
+                    Toast.makeText(RouteActivity.this, "您未安装其他地图应用", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+
+
+                    showMapDialog();
+
+                
             }
         });
+    }
+
+    private void showMapDialog() {
+        bottomDialog.dismiss();
+        mapDialog = new Dialog(this, R.style.BottomDialog);
+        Window dialogWindow = mapDialog.getWindow();
+        dialogWindow.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        View view = View.inflate(RouteActivity.this, R.layout.map_list_dialog, null);
+        ListView mapListView = (ListView) view.findViewById(R.id.lv_map);
+        mapDialog.setContentView(view);
+        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+        layoutParams.width = getResources().getDisplayMetrics().widthPixels;
+        view.setLayoutParams(layoutParams);
+
+        mapListView.setAdapter(mAdapter);
+        mapDialog.getWindow().setGravity(Gravity.BOTTOM);
+        mapDialog.getWindow().setWindowAnimations(R.style.BottomDialog_Animation);
+        mAdapter.notifyDataSetChanged();
+        mapDialog.show();
+        mapListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                if (mAdapter.getItem(position).equals("腾讯地图")){
+                    doStartApplicationWithPackageName("com.tencent.map");
+                }else if (mAdapter.getItem(position).equals("百度地图")){
+                    doStartApplicationWithPackageName("com.baidu.BaiduMap");
+
+                }else if (mAdapter.getItem(position).equals("HERE地图")){
+                    doStartApplicationWithPackageName("com.here.app.maps");
+
+                }else if (mAdapter.getItem(position).equals("搜狗地图")){
+                    doStartApplicationWithPackageName("com.sogou.map.android.maps");
+
+                }else if (mAdapter.getItem(position).equals("高德地图")){
+                    doStartApplicationWithPackageName("com.autonavi.minimap");
+
+                }else if (mAdapter.getItem(position).equals("取消")){
+                    mapDialog.dismiss();
+                    bottomDialog.show();
+                }
 
 
 
 
+            }
+        });
+    }
+
+
+    //腾讯地图com.tencent.map
+    //百度地图com.baidu.BaiduMap
+    //HERE地图com.here.app.maps
+    //搜狗地图com.sogou.map.android.maps
+    //高德地图com.autonavi.minimap
+    //谷歌地图和高德地图包名一致，但在国内无法使用
+    //根据包名判断地图app是否安装
+    public boolean isAppInstalled(Context context, String packageName) {
+        final PackageManager packageManager = context.getPackageManager();
+        List<PackageInfo> pinfo = packageManager.getInstalledPackages(0);
+        List<String> pName = new ArrayList<String>();
+        if (pinfo != null) {
+            for (int i = 0; i < pinfo.size(); i++) {
+                String pn = pinfo.get(i).packageName;
+                pName.add(pn);
+            }
+        }
+        return pName.contains(packageName);
     }
 
     @Override

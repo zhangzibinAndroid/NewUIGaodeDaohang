@@ -3,11 +3,16 @@
  */
 package com.returnlive.map.utils;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
 import com.amap.api.location.AMapLocation;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -94,4 +99,7 @@ public class Utils {
 		}
 		return sdf == null ? "NULL" : sdf.format(l);
 	}
+
+
+
 }

@@ -15,6 +15,9 @@
         <item name="android:backgroundDimEnabled">false</item>
     </style>
 
+
+
+
     <style name="BottomDialog.Animation" parent="Animation.AppCompat.Dialog">
         <item name="android:windowEnterAnimation">@anim/translate_dialog_in</item>
         <item name="android:windowExitAnimation">@anim/translate_dialog_out</item>
